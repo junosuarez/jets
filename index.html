@@ -1,22 +1,108 @@
 <html>
 <head>
-<title>redirecting...</title>
+<title>wait!</title>
+<style>
+    body {
+        font-family: sans-serif;
+    }
+    #redirect-link{
+        padding: 2em;
+        font-size: 150%;
+        display: block;
+    }
+    input.invalid, input:invalid {
+        outline: 1px solid red;
+        background: #f0e4e6;
+    }
+</style>
+<script>
+// part zero, some helper functions:
+function el(id) {
+    return document.getElementById(id);
+}
+
+function encode(plain) {
+    return encodeURIComponent(btoa(plain));
+}
+
+function decode(encoded) {
+    return atob(decodeURIComponent(encoded));
+}
+
+function validate(href) {
+    if (!href.startsWith('https://')) {
+        // prevent shenanigans like javascript: or other bad links
+        return {isValid: false}
+    }
+    return {isValid: true, value: href}
+}
+
+</script>
 </head>
 <body>
-<fieldset>
-<h1>redirecting to your destination...</h1>
-<a href="">...</a>
+
+<fieldset id="redirect">
+    <h1>click to navigate to your destination...</h1>
+    <a href="" id="redirect-link">...</a>
+    
+    <script>
+    const $redirect = el('redirect')
+    const $redirectLink = el('redirect-link')
+    // part one, maybe decode a destination url from this url hash
+    const hash = window.location.hash.slice(1);
+    
+    // no hash. hide it entirely
+    if (!hash) {
+        $redirect.style.display='none'
+    }
+    const unsafeDecoded = decode(hash);
+    const validated = validate(unsafeDecoded)
+    if (!validated.isValid) {
+        $redirect.style.display='none'
+        // TODO: maybe display a nicer message explaining why we can't show this link
+    } else {
+        $redirectLink.href=validated.value
+        $redirectLink.textContent=validated.value
+    }
+    </script>
 </fieldset>
+
+
 
 <br/><br/><br/><br/>
 
 <fieldset>
-<h2>make your own redirect link</h2>
-<input /><br/>
-<div id="newlink"></div>
+    <h2>make your own redirect link</h2>
+    <label>destination url (must be https): <input id="dest-input" placeholder="https://" pattern="https:\/\/.+" /></label></a><br/>
+    <label>give out this url:
+    <a id="dest-link" href="" /></label>
+    
+    <script>
+    // part 2, encode a destination url into a new redirect url
+    const $destLink = el('dest-link');
+    const $destInput = el('dest-input');
+    $destInput.onkeyup = (e) => {
+        const unsafeUserInput = e.target.value;
+        const validated = validate(unsafeUserInput)
+        
+        if (validated.isValid) {
+            $destInput.classList.remove('invalid')
+            const destination = new URL(window.location)
+            destination.hash = encode(validated.value)        
+            
+            $destLink.href = String(destination);
+            $destLink.textContent =  String(destination);
+        } else {
+            $destInput.classList.add('invalid')
+            $destLink.href = '';
+            $destLink.textContent =  '';
+        }
+    }
+    </script>
 </fieldset>
+
 
 <br/><br/><br/>
 
-<p>viewsource and save to your own server</p>
+<p>right-click, view source and save to your own server</p>
 </html>
